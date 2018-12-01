@@ -1,0 +1,7 @@
+#! /usr/bin/env -S chibi-scheme -q
+; vim:set ft=scheme:
+
+(import (chibi io)) ;; port-fold
+
+(display (port-fold + 0 read))
+(newline)
