@@ -1,0 +1,22 @@
+#! /usr/bin/env -S chibi-scheme -q
+; vim:ft=scheme:
+
+(import (chibi io)
+        (scheme set))
+
+
+(define (find-calibration-frequency change-list)
+  (define (run-list cur-freq seen-freqs items)
+    (if (null? items)
+      (run-list cur-freq seen-freqs change-list)  ; Restart list.
+      (if (set-contains? seen-freqs cur-freq)
+        cur-freq  ; Found!
+        (run-list (+ cur-freq (car items))
+                  (set-adjoin! seen-freqs cur-freq)
+                  (cdr items)))))
+  (run-list 0 (set =) change-list))
+
+
+(display (find-calibration-frequency
+           (port->list read (current-input-port))))
+(newline)
