@@ -1,0 +1,65 @@
+#! /usr/bin/env -S chibi-scheme -q
+; vim:set ft=scheme:
+
+(import (chibi io)
+        (scheme list)
+        (scheme set))
+
+
+; Given two identifiers "a" and "b", determine whether they are
+; similar: their lengths must match, and they must differ only
+; in one character at the same position. To figure out the second,
+; iterate elements of both lists of characters at the same time
+; (with "zip") and "count" those items for which both characters
+; are the same; if both are similar, the count of different chars
+; must be exactly one.
+;
+(define (similar-ids? a b)
+  (and (= (string-length a) (string-length b))
+       (= 1 (count (lambda (pair) (not (eq? (car pair) (cadr pair))))
+                   (zip (string->list a) (string->list b))))))
+
+
+; Extract common letters of two strings, removing the characters
+; which are not equal for a given position of both strings.
+;
+(define (common-chars a b)
+  (define pairs (zip (string->list a) (string->list b)))
+  (list->string
+    (map! car
+          (filter! (lambda (pair) (eq? (car pair) (cadr pair)))
+                   pairs))))
+
+
+; This is used below with "port-fold"; it visits each identifier,
+; and keeps either a string or a set as the "seen" state:
+;
+;  - If the matching IDs have been found already, the state
+;    is the result string, as calculated by "common-chars".
+;
+;  - Otherwise, the state is the set of IDs seen so far, and
+;    if updated with either the set with the new current ID
+;    added; or updated to be the result string if the current
+;    ID "matches" (that is: is close enough, as determined by
+;    "similar-ids?" above).
+;
+(define (visit-id id seen)
+  (if (string? seen)
+    seen  ; Already found
+    (let ((item (set-find (lambda (v) (similar-ids? v id))
+                          seen
+                          (lambda () '()))))
+      (if (null? item)
+        (set-adjoin! seen id)
+        (common-chars item id)))))
+
+
+; Go over all the symbols read from the input, initially with
+; an empty set as the state, converting each symbol to a string
+; before calling "visit-id" for each one of them.
+;
+(display
+  (port-fold (lambda (sym seen) (visit-id (symbol->string sym) seen))
+             (set eq?)
+             read))
+(newline)
