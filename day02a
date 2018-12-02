@@ -1,0 +1,49 @@
+#! /usr/bin/env -S chibi-scheme -q
+; vim:set ft=scheme:
+
+(import (chibi io)
+        (scheme hash-table)
+        (scheme list))
+
+
+; Takes an identified (string), and analyzes whether:
+;
+;   - a = It contains any letter twice.
+;   - b = It contains any letter thrice.
+;
+; Then it returns a pair (bool . bool) with (a . b).
+;
+(define (analyze-id id)
+  (let* ((char-counts (make-hash-table eq?))
+         (visit-char (lambda (char)
+                       (hash-table-update!/default char-counts
+                                                   char
+                                                   (lambda (v) (+ v 1))
+                                                   0))))
+    (for-each visit-char (string->list id))
+    (hash-table-fold char-counts
+                     (lambda (char count result)
+                       (cons (or (car result)
+                                 (= count 2))
+                             (or (cdr result)
+                                 (= count 3))))
+                     (cons #f #f))))
+
+
+; This applies "analyze-id" to each element in the input using
+; "port-map" to obtain a list of (bool . bool) items, and then
+; "fold" over than to turn the list into a pair (num . num) with
+; the count of items which have the same letter twice and thrice.
+;
+(define counts (fold (lambda (pair result)
+                       (cons (if (car pair) (+ (car result) 1) (car result))
+                             (if (cdr pair) (+ (cdr result) 1) (cdr result))))
+                     (cons 0 0)
+                     (port-map (lambda (sym) (analyze-id (symbol->string sym)))
+                               read)))
+
+
+; Finally, the checksum is just the multiplication of the counts.
+;
+(display (* (car counts) (cdr counts)))
+(newline)
