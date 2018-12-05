@@ -4,8 +4,8 @@
 (import (aoc rect)
         (chibi iset)
         (chibi loop)
+        (chibi match)
         (chibi parse)
-        (chibi show)
         (scheme charset)
         (scheme hash-table))
 
@@ -41,16 +41,21 @@
                           (make-parse-stream "<stdin>" (current-input-port))))
 
 
-(display (hash-table-fold cloth
-           (lambda (pos idset count)
-             ; (show #t
-             ;       "Pos " pos
-             ;       ", Count " count
-             ;       ", " (iset-size idset)
-             ;       " Ids: " (iset->list idset)
-             ;       nl)
-             (if (> (iset-size idset) 1)
-               (+ 1 count)
-               count))
-           0))
-(newline)
+(match (hash-table-fold cloth
+                        (lambda (_ idset state)
+                          (match state (#(count allids overlapids)
+                                        (if (> (iset-size idset) 1)
+                                          (vector (+ count 1)
+                                                  (iset-union! allids idset)
+                                                  (iset-union! overlapids idset))
+                                          (vector count
+                                                  (iset-union! allids idset)
+                                                  overlapids)))))
+                        (vector 0 (make-iset) (make-iset)))
+       (#(count allids overlapids) (begin
+                                     (display "Overlapped inches: ")
+                                     (display count)
+                                     (newline)
+                                     (display "Non-overlapping IDs: ")
+                                     (display (iset->list (iset-difference allids overlapids)))
+                                     (newline))))
