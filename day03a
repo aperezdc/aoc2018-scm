@@ -1,0 +1,56 @@
+#! /usr/bin/env -S chibi-scheme -q
+; vim:set ft=scheme:
+
+(import (aoc rect)
+        (chibi iset)
+        (chibi loop)
+        (chibi parse)
+        (chibi show)
+        (scheme charset)
+        (scheme hash-table))
+
+
+(define-grammar claim-grammar
+  (space  ((* ,char-set:whitespace)))
+  (number ((=> n (+ ,char-set:digit))
+           (string->number (list->string n))))
+  (*claim ((: "#" ,space (=> c ,number) ,space
+              "@" ,space (=> x ,number) ,space
+              "," ,space (=> y ,number) ,space
+              ":" ,space (=> w ,number) ,space
+              "x" ,space (=> h ,number) ,space)
+           (cons c (rect x y w h)))))
+
+
+(define (visit-claim pair cloth)
+  (let ((id (car pair))
+        (rr (cdr pair)))
+    (loop ((for y (up-from (rect-t rr) (to (+ 1 (rect-b rr))))))
+          (loop ((for x (up-from (rect-l rr) (to (+ 1 (rect-r rr))))))
+                (hash-table-update! cloth
+                                    (cons x y)
+                                    (lambda (idset) (iset-adjoin! idset id))
+                                    (lambda () (iset-adjoin! (make-iset) id))))))
+  cloth)
+
+; Maps (x, y) locations to the set IDs which claims the location.
+;
+(define cloth (parse-fold *claim
+                          visit-claim
+                          (make-hash-table equal?)
+                          (make-parse-stream "<stdin>" (current-input-port))))
+
+
+(display (hash-table-fold cloth
+           (lambda (pos idset count)
+             ; (show #t
+             ;       "Pos " pos
+             ;       ", Count " count
+             ;       ", " (iset-size idset)
+             ;       " Ids: " (iset->list idset)
+             ;       nl)
+             (if (> (iset-size idset) 1)
+               (+ 1 count)
+               count))
+           0))
+(newline)
