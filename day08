@@ -1,0 +1,26 @@
+#! /usr/bin/env -S chibi-scheme -q
+; vim:set ft=scheme:
+
+(import (chibi io)
+        (chibi match)
+        (scheme list))
+
+(define (sum-nodes in)
+  (define (aux cur l)
+    (match l
+           ; Empty list: Stop.
+           ('()
+            (cons cur '()))
+           ; Node with no children: Add the metadatas.
+           ((0 nmeta . rest)
+            (cons (+ cur (fold + 0 (take rest nmeta))) (drop rest nmeta)))
+           ; Node with children: Sum children metadata, then add own metadatas.
+           ((nchild nmeta . rest)
+            (match (aux 0 rest)
+                   ((s . r)
+                    (aux (+ cur s) (cons (- nchild 1) (cons nmeta r)))))
+            )))
+  (car (aux 0 in)))
+
+(display (sum-nodes (port->list read (current-input-port))))
+(newline)
