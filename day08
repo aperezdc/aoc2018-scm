@@ -3,7 +3,6 @@
 
 (import (chibi io)
         (chibi match)
-        (chibi show)
         (scheme list)
         (srfi 9))
 
@@ -33,6 +32,13 @@
                          (node-value (list-ref (node-children node) i))
                          0)))
                    (node-metadata node)))))
+
+;
+; Summ all the metadata values of the node and its subnodes.
+;
+(define (node-sum-metadata node)
+  (+ (fold + 0 (node-metadata node))
+     (fold + 0 (map node-sum-metadata (node-children node)))))
 
 ;
 ; list[num] -> node
@@ -80,5 +86,12 @@
   (car (node-parse-one input)))
 
 
-(display (node-value (node-parse (port->list read (current-input-port)))))
+(define INPUT (node-parse (port->list read (current-input-port))))
+
+(display "metadata sum: ")
+(display (node-sum-metadata INPUT))
+(newline)
+
+(display "node value: ")
+(display (node-value INPUT))
 (newline)
