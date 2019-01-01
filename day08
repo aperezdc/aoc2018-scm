@@ -23,18 +23,19 @@
 ; indexes are skipped (no value is added for them).
 ;
 (define (node-value node)
+  (define (valid-index? idx)
+    (and (>= idx 1)
+         (<= idx (length (node-children node)))))
   (if (null? (node-children node))
     (fold + 0 (node-metadata node))
-    (fold + 0 (map (lambda (index)
-                     (define i (- index 1))
-                     (if (< i 0) 0
-                       (if (< i (length (node-children node)))
-                         (node-value (list-ref (node-children node) i))
-                         0)))
+    (fold + 0 (map (lambda (idx)
+                     (if (valid-index? idx)
+                       (node-value (list-ref (node-children node) (- idx 1)))
+                       0))
                    (node-metadata node)))))
 
 ;
-; Summ all the metadata values of the node and its subnodes.
+; Sum all the metadata values of the node and its subnodes.
 ;
 (define (node-sum-metadata node)
   (+ (fold + 0 (node-metadata node))
